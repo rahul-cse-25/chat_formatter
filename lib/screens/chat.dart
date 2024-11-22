@@ -8,8 +8,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class Chat extends StatefulWidget {
-  final String self;
   final List<Map<String, String>> chatData;
+  final String self;
 
   const Chat({super.key, required this.chatData, required this.self});
 
@@ -19,17 +19,25 @@ class Chat extends StatefulWidget {
 
 class _ChatState extends State<Chat> {
   ImpCustomizeStyle impStyle = ImpCustomizeStyle();
-  List<int> tappedIndex = [];
-  String otherUser = '';
+
+
   ItemScrollController itemScrollController = ItemScrollController();
   ItemPositionsListener itemPositionsListener = ItemPositionsListener.create();
+  TextEditingController searchController = TextEditingController();
+  FocusNode focusNode = FocusNode();
+
+
+  List<int> tappedIndex = [];
+  List<int> searchResults = [];
+  String otherUser = '';
+  String visibleDate = '';
+  int? searchedIndex;
+
+
   bool showScrollButton = true;
   bool isSearchingOpen = false;
-  FocusNode focusNode = FocusNode();
-  TextEditingController searchController = TextEditingController();
   bool isEmpty = true;
-  List<int> searchResults = [];
-  int? searchedIndex;
+
 
   @override
   void initState() {
@@ -42,93 +50,35 @@ class _ChatState extends State<Chat> {
     for (String date in Extraction.dates) {
       printYellow(date);
     }
+    if (widget.chatData.isNotEmpty) {
+      visibleDate = widget.chatData.first['date']!;
+    }
     itemPositionsListener.itemPositions.addListener(scrollListener);
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    tappedIndex.clear();
-    tappedIndex = [];
-    Extraction.users.clear();
-    Extraction.dates.clear();
-    itemPositionsListener.itemPositions.removeListener(scrollListener);
-    // scrollController.dispose();
-  }
-
-  void scrollToBottom() {
-    itemScrollController.scrollTo(
-      index: widget.chatData.length - 1,
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-    );
-  }
-
-  void scrollToTop() {
-    itemScrollController.scrollTo(
-      index: 0,
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-    );
   }
 
   void scrollListener() {
     // Get the list of currently visible items
     final visibleItems = itemPositionsListener.itemPositions.value;
 
+    printRed(visibleItems);
     // Find the first visible item (minimum index)
     int firstVisibleIndex = visibleItems
         .where((position) => position.itemLeadingEdge >= 0)
         .map((position) => position.index)
         .reduce((min, index) => index < min ? index : min);
 
-    // Calculate the remaining bubbles
+    printRed(firstVisibleIndex);
     int remainingItems = widget.chatData.length - firstVisibleIndex - 1;
 
-    setState(() {
-      // If there are 100 or more bubbles below, show the button
-      showScrollButton = remainingItems >= 100;
-    });
-  }
-
-  void showToast(String message) {
-    Fluttertoast.showToast(
-        msg: message,
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.black,
-        textColor: Colors.white,
-        fontSize: 16.0);
-  }
-
-  void searchForText(String query) {
-    searchResults.clear(); // Clear previous search results
-    String lowerCaseQuery = query.toLowerCase();
-
-    for (int i = 0; i < widget.chatData.length; i++) {
-      String message = widget.chatData[i]['message']!.toLowerCase();
-
-      if (message.contains(lowerCaseQuery)) {
-        searchResults.add(i);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          scrollToIndex(searchResults.first);
-          searchedIndex = 0;
-        });
-      }
+    // Update the visible date based on the first visible item's date
+    String newVisibleDate = widget.chatData[firstVisibleIndex]['date']!;
+    printRed(newVisibleDate);
+    if (newVisibleDate != visibleDate) {
+      setState(() {
+        visibleDate = newVisibleDate;
+        showScrollButton = remainingItems >= 50;
+      });
     }
-
-    printYellow(searchResults);
-    setState(() {});
-  }
-
-  void scrollToIndex(int index) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      itemScrollController.scrollTo(
-        index: index,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
-    });
   }
 
   @override
@@ -204,8 +154,28 @@ class _ChatState extends State<Chat> {
                       );
                     }).toList();
                   },
-                  icon: impStyle.impIcon(Icons.more_vert,
-                      color: Colors.white), // "More" icon (three dots)
+                  icon: Row(
+                    children: [
+                      if(isSearchingOpen && searchedIndex != null && searchResults.isNotEmpty)
+                        Container(
+                            padding: EdgeInsets.symmetric(horizontal: impStyle.sizes.horizontalBlockSize * 2.0,vertical: impStyle.sizes.horizontalBlockSize * 1.0),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade800,
+                              borderRadius: BorderRadius.circular(impStyle.sizes.textMultiplier),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.shade500,
+                                  spreadRadius: 2,
+                                  // blurRadius: 7,
+                                ),
+                              ]
+                            ),
+                            child: impStyle.impSubHeader('${searchedIndex! + 1}/${searchResults.length}',textColor: Colors.white)),
+                     impStyle.impHorizontalGap(horizontalGapSizeInPercent: 4),
+                      impStyle.impIcon(Icons.more_vert,
+                          color: Colors.white),
+                    ],
+                  ), // "More" icon (three dots)
                 ),
               ],
             ),
@@ -220,6 +190,7 @@ class _ChatState extends State<Chat> {
                 children: [
                   ScrollablePositionedList.builder(
                     itemScrollController: itemScrollController,
+                    itemPositionsListener: itemPositionsListener,
                     itemCount: widget.chatData.length,
                     itemBuilder: (context, index) {
                       return _messageBubble(widget.chatData[index], onTap: () {
@@ -233,6 +204,29 @@ class _ChatState extends State<Chat> {
                       });
                     },
                   ),
+
+                  Positioned(
+                    top: impStyle.sizes.horizontalBlockSize,
+                    left: 0,
+                    right: 0,
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: impStyle.sizes.horizontalBlockSize * 4.0,vertical: impStyle.sizes.horizontalBlockSize * 1.0),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(impStyle.sizes.textMultiplier * 1.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.shade800.withOpacity(0.6),
+                                spreadRadius: 2,
+                                // blurRadius: 7,
+                              ),
+                            ]
+                          ),
+                          child: impStyle.impSubHeader(visibleDate,textColor: Colors.white)),
+                    ),
+                  ),
+
                   if (showScrollButton)
                     Positioned(
                       bottom: impStyle.sizes.horizontalBlockSize * 4.0,
@@ -269,6 +263,13 @@ class _ChatState extends State<Chat> {
                     child: impStyle.impTextField(
                         onChangedText: (text) {
                           setState(() => isEmpty = text.isEmpty);
+                          searchForText(text);
+                          if(text.isEmpty){
+                            setState(() {
+                              searchedIndex = null;
+                              searchResults.clear();
+                            });
+                          }
                         },
                         hintText: 'Search...',
                         controller: searchController,
@@ -278,6 +279,7 @@ class _ChatState extends State<Chat> {
                           searchController.clear();
                           setState(() {
                             isEmpty = true;
+                            searchedIndex = null;
                             searchResults.clear();
                           });
                         }),
@@ -288,8 +290,10 @@ class _ChatState extends State<Chat> {
                     impStyle.impShadedIconButton(
                         onPressed: () {
                           if (searchResults.isNotEmpty) {
-                            searchedIndex =
-                                (searchedIndex! + 1) % searchResults.length;
+                            setState(() {
+                              searchedIndex =
+                                  (searchedIndex! + 1) % searchResults.length;
+                            });
                             scrollToIndex(searchResults[searchedIndex!]);
                           } else {
                             searchForText(searchController.text);
@@ -308,8 +312,10 @@ class _ChatState extends State<Chat> {
                             setState(() => isSearchingOpen = false);
                             focusNode.unfocus();
                           } else {
-                            searchedIndex =
-                                (searchedIndex! - 1) % searchResults.length;
+                            setState(() {
+                              searchedIndex =
+                                  (searchedIndex! - 1) % searchResults.length;
+                            });
                             scrollToIndex(searchResults[searchedIndex!]);
                           }
                         },
@@ -362,10 +368,7 @@ class _ChatState extends State<Chat> {
                 borderRadius: BorderRadius.circular(
                     impStyle.sizes.horizontalBlockSize * 4.0),
               ),
-              child: impStyle.impSubHeader(data['message']!,
-                  textColor: widget.self == data['user']
-                      ? ImpColors.pureWhiteColor
-                      : ImpColors.pureBlackColor),
+              child: _highlightSearchText(data),
             ),
           ),
           if (tappedIndex.contains(widget.chatData.indexOf(data)))
@@ -395,6 +398,120 @@ class _ChatState extends State<Chat> {
         ],
       ),
     );
+  }
+
+  Widget _highlightSearchText(Map<String, String> data) {
+    if (searchController.text.isEmpty) {
+      return impStyle.impSubHeader(data['message']!,
+          textColor: widget.self == data['user'] ? ImpColors.pureWhiteColor : ImpColors.pureBlackColor);
+    }
+
+    String lowerCaseMessage = data['message']!.toLowerCase();
+    String lowerCaseSearch = searchController.text.toLowerCase();
+    List<TextSpan> spans = [];
+    int start = 0;
+    int indexOfHighlight;
+
+    while ((indexOfHighlight = lowerCaseMessage.indexOf(lowerCaseSearch, start)) != -1) {
+      if (indexOfHighlight > start) {
+        // Add non-highlighted text
+        spans.add(TextSpan(
+            text: data['message']!.substring(start, indexOfHighlight),
+            style: TextStyle(
+              color: widget.self == data['user'] ? ImpColors.pureWhiteColor : ImpColors.pureBlackColor,
+            )));
+      }
+
+      // Add highlighted text
+      spans.add(TextSpan(
+          text: data['message']!.substring(indexOfHighlight, indexOfHighlight + lowerCaseSearch.length),
+          style: TextStyle(
+            backgroundColor: widget.self == data['user'] ? Colors.purple : Colors.yellow,
+            color: widget.self == data['user'] ? ImpColors.pureWhiteColor : ImpColors.pureBlackColor,
+          )));
+
+      // Move the start index
+      start = indexOfHighlight + lowerCaseSearch.length;
+    }
+
+    // Add remaining text after the last highlight
+    if (start < data['message']!.length) {
+      spans.add(TextSpan(
+          text: data['message']!.substring(start),
+          style: TextStyle(
+            color: widget.self == data['user'] ? ImpColors.pureWhiteColor : ImpColors.pureBlackColor,
+          )));
+    }
+
+    return RichText(
+      text: TextSpan(children: spans),
+    );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    tappedIndex.clear();
+    tappedIndex = [];
+    Extraction.users.clear();
+    Extraction.dates.clear();
+    itemPositionsListener.itemPositions.removeListener(scrollListener);
+  }
+
+  void searchForText(String query) {
+    searchResults.clear(); // Clear previous search results
+    String lowerCaseQuery = query.toLowerCase();
+
+    for (int i = 0; i < widget.chatData.length; i++) {
+      String message = widget.chatData[i]['message']!.toLowerCase();
+
+      if (message.contains(lowerCaseQuery)) {
+        searchResults.add(i);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          scrollToIndex(searchResults.first);
+          setState(() {
+            searchedIndex = 0;
+          });
+        });
+      }
+    }
+    if(searchResults.isEmpty) showToast('No results found');
+  }
+
+  void scrollToIndex(int index) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      itemScrollController.scrollTo(
+        index: index,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  void scrollToBottom() {
+    itemScrollController.scrollTo(
+      index: widget.chatData.length - 1,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void scrollToTop() {
+    itemScrollController.scrollTo(
+      index: 0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void showToast(String message) {
+    Fluttertoast.showToast(
+        msg: message,
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.grey.shade800,
+        textColor: Colors.white,
+        fontSize: impStyle.sizes.horizontalBlockSize * 2.5);
   }
 
 }

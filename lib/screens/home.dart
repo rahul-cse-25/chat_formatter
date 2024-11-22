@@ -19,7 +19,10 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   String? fileContent;
   File? file;
+
+
   bool isLoading = false;
+
 
   @override
   Widget build(BuildContext context) {

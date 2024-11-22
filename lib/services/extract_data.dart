@@ -4,31 +4,6 @@ class Extraction {
   static Set<String> users = {};
   static Set<String> dates = {};
 
-  // static List<Map<String, String>>? extractData({required String fileContent}) {
-  //   try {
-  //     RegExp regExp = RegExp(
-  //         r'(\d{1,2}/\d{1,2}/\d{4}), (\d{1,2}:\d{2}\s?[ap]m) - (.*?): (.*?)(?=\n\d{2}/\d{2}/\d{4}, \d{1,2}:\d{2}\s?[ap]m|$)',
-  //         dotAll: true);
-  //
-  //     Iterable<RegExpMatch> matches = regExp.allMatches(fileContent);
-  //
-  //     List<Map<String, String>> extractedMessages = matches.map((match) {
-  //       users.add(match.group(3)!);
-  //       dates.add(match.group(1)!);
-  //       return {
-  //         'date': match.group(1)!,
-  //         'time': match.group(2)!,
-  //         'user': match.group(3)!,
-  //         'message': match.group(4)!,
-  //       };
-  //     }).toList();
-  //
-  //     return extractedMessages;
-  //   } catch (e) {
-  //     printRed('Error while Extracting the data');
-  //   }
-  //   return null;
-  // }
 
   static List<Map<String, String>>? extractData({required String fileContent}) {
     try {
@@ -70,7 +45,4 @@ class Extraction {
     }
     return null;
   }
-
-
-
 }
