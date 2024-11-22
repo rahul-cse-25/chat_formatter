@@ -1,6 +1,7 @@
+import 'dart:async';
+
 import 'package:chat_formatter/config/colors.dart';
 import 'package:chat_formatter/config/customize_style.dart';
-import 'package:chat_formatter/config/debug_purpose.dart';
 import 'package:chat_formatter/services/extract_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,12 +21,11 @@ class Chat extends StatefulWidget {
 class _ChatState extends State<Chat> {
   ImpCustomizeStyle impStyle = ImpCustomizeStyle();
 
-
   ItemScrollController itemScrollController = ItemScrollController();
   ItemPositionsListener itemPositionsListener = ItemPositionsListener.create();
   TextEditingController searchController = TextEditingController();
   FocusNode focusNode = FocusNode();
-
+  Timer? hideDateTimer;
 
   List<int> tappedIndex = [];
   List<int> searchResults = [];
@@ -33,11 +33,10 @@ class _ChatState extends State<Chat> {
   String visibleDate = '';
   int? searchedIndex;
 
-
   bool showScrollButton = true;
   bool isSearchingOpen = false;
   bool isEmpty = true;
-
+  bool isScrolling = false;
 
   @override
   void initState() {
@@ -47,9 +46,9 @@ class _ChatState extends State<Chat> {
         otherUser = user;
       }
     }
-    for (String date in Extraction.dates) {
-      printYellow(date);
-    }
+    // for (String date in Extraction.dates) {
+    //   printYellow(date);
+    // }
     if (widget.chatData.isNotEmpty) {
       visibleDate = widget.chatData.first['date']!;
     }
@@ -60,25 +59,33 @@ class _ChatState extends State<Chat> {
     // Get the list of currently visible items
     final visibleItems = itemPositionsListener.itemPositions.value;
 
-    printRed(visibleItems);
     // Find the first visible item (minimum index)
     int firstVisibleIndex = visibleItems
         .where((position) => position.itemLeadingEdge >= 0)
         .map((position) => position.index)
         .reduce((min, index) => index < min ? index : min);
 
-    printRed(firstVisibleIndex);
     int remainingItems = widget.chatData.length - firstVisibleIndex - 1;
 
     // Update the visible date based on the first visible item's date
     String newVisibleDate = widget.chatData[firstVisibleIndex]['date']!;
-    printRed(newVisibleDate);
     if (newVisibleDate != visibleDate) {
       setState(() {
         visibleDate = newVisibleDate;
+        isScrolling = true;
         showScrollButton = remainingItems >= 50;
       });
     }
+
+    hideDateTimer?.cancel();
+
+    // Start a new timer to hide the date container after 2 seconds
+    hideDateTimer = Timer(const Duration(seconds: 1), () {
+      setState(() {
+        isScrolling =
+            false; // Hide date container after 2 seconds of no scrolling
+      });
+    });
   }
 
   @override
@@ -114,7 +121,10 @@ class _ChatState extends State<Chat> {
                               color: Colors.white)),
                       impStyle.impHorizontalGap(horizontalGapSizeInPercent: 2),
                       Expanded(
-                          child: impStyle.impHeader(otherUser,
+                          child: impStyle.impHeader(
+                              Extraction.users.length > 2
+                                  ? 'Chat-mates'
+                                  : otherUser,
                               textColor: Colors.white,
                               maxLinesOfText: 1,
                               onOverFlow: TextOverflow.ellipsis)),
@@ -143,7 +153,7 @@ class _ChatState extends State<Chat> {
                     }
                   },
                   itemBuilder: (BuildContext context) {
-                    return {'Go to Top', 'Search', 'More'}.map((String choice) {
+                    return {'Go to Top', 'Search'}.map((String choice) {
                       return PopupMenuItem<String>(
                         padding: EdgeInsets.symmetric(
                             horizontal:
@@ -156,24 +166,31 @@ class _ChatState extends State<Chat> {
                   },
                   icon: Row(
                     children: [
-                      if(isSearchingOpen && searchedIndex != null && searchResults.isNotEmpty)
+                      if (isSearchingOpen &&
+                          searchedIndex != null &&
+                          searchResults.isNotEmpty)
                         Container(
-                            padding: EdgeInsets.symmetric(horizontal: impStyle.sizes.horizontalBlockSize * 2.0,vertical: impStyle.sizes.horizontalBlockSize * 1.0),
+                            padding: EdgeInsets.symmetric(
+                                horizontal:
+                                    impStyle.sizes.horizontalBlockSize * 2.0,
+                                vertical:
+                                    impStyle.sizes.horizontalBlockSize * 1.0),
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade800,
-                              borderRadius: BorderRadius.circular(impStyle.sizes.textMultiplier),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.shade500,
-                                  spreadRadius: 2,
-                                  // blurRadius: 7,
-                                ),
-                              ]
-                            ),
-                            child: impStyle.impSubHeader('${searchedIndex! + 1}/${searchResults.length}',textColor: Colors.white)),
-                     impStyle.impHorizontalGap(horizontalGapSizeInPercent: 4),
-                      impStyle.impIcon(Icons.more_vert,
-                          color: Colors.white),
+                                color: Colors.grey.shade800,
+                                borderRadius: BorderRadius.circular(
+                                    impStyle.sizes.textMultiplier),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.shade500,
+                                    spreadRadius: 2,
+                                    // blurRadius: 7,
+                                  ),
+                                ]),
+                            child: impStyle.impSubHeader(
+                                '${searchedIndex! + 1}/${searchResults.length}',
+                                textColor: Colors.white)),
+                      impStyle.impHorizontalGap(horizontalGapSizeInPercent: 4),
+                      impStyle.impIcon(Icons.more_vert, color: Colors.white),
                     ],
                   ), // "More" icon (three dots)
                 ),
@@ -204,29 +221,34 @@ class _ChatState extends State<Chat> {
                       });
                     },
                   ),
-
-                  Positioned(
-                    top: impStyle.sizes.horizontalBlockSize,
-                    left: 0,
-                    right: 0,
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: impStyle.sizes.horizontalBlockSize * 4.0,vertical: impStyle.sizes.horizontalBlockSize * 1.0),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(impStyle.sizes.textMultiplier * 1.5),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.shade800.withOpacity(0.6),
-                                spreadRadius: 2,
-                                // blurRadius: 7,
-                              ),
-                            ]
-                          ),
-                          child: impStyle.impSubHeader(visibleDate,textColor: Colors.white)),
+                  if (isScrolling)
+                    Positioned(
+                      top: impStyle.sizes.horizontalBlockSize,
+                      left: 0,
+                      right: 0,
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal:
+                                    impStyle.sizes.horizontalBlockSize * 4.0,
+                                vertical:
+                                    impStyle.sizes.horizontalBlockSize * 1.0),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(
+                                    impStyle.sizes.textMultiplier * 1.5),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color:
+                                        Colors.grey.shade800.withOpacity(0.6),
+                                    spreadRadius: 2,
+                                    // blurRadius: 7,
+                                  ),
+                                ]),
+                            child: impStyle.impSubHeader(visibleDate,
+                                textColor: Colors.white)),
+                      ),
                     ),
-                  ),
-
                   if (showScrollButton)
                     Positioned(
                       bottom: impStyle.sizes.horizontalBlockSize * 4.0,
@@ -264,7 +286,7 @@ class _ChatState extends State<Chat> {
                         onChangedText: (text) {
                           setState(() => isEmpty = text.isEmpty);
                           searchForText(text);
-                          if(text.isEmpty){
+                          if (text.isEmpty) {
                             setState(() {
                               searchedIndex = null;
                               searchResults.clear();
@@ -342,6 +364,29 @@ class _ChatState extends State<Chat> {
             ? CrossAxisAlignment.end
             : CrossAxisAlignment.start,
         children: [
+          if (widget.chatData.indexOf(data) == 0 ||
+              (data['date'] != null &&
+                  widget.chatData.indexOf(data) != 0 &&
+                  data['date']! !=
+                      widget.chatData[widget.chatData.indexOf(data) - 1]
+                          ['date']))
+            Align(
+              alignment: Alignment.center,
+              child: Container(
+                margin: EdgeInsets.symmetric(
+                    vertical: impStyle.sizes.horizontalBlockSize * 4.0),
+                padding: EdgeInsets.symmetric(
+                    horizontal: impStyle.sizes.horizontalBlockSize * 4.5,
+                    vertical: impStyle.sizes.horizontalBlockSize * 2.0),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade900,
+                  borderRadius: BorderRadius.circular(
+                      impStyle.sizes.horizontalBlockSize * 4.0),
+                ),
+                child: impStyle.impSubHeader(data['date']!,
+                    textColor: Colors.grey.shade600),
+              ),
+            ),
           GestureDetector(
             onTap: onTap,
             onLongPress: () =>
@@ -352,11 +397,8 @@ class _ChatState extends State<Chat> {
                     0.75, // Set max width as 70% of screen width
               ),
               margin: EdgeInsets.only(
-                  top: impStyle.sizes.horizontalBlockSize,
-                  bottom: widget.chatData.indexOf(data) ==
-                          widget.chatData.length - 1
-                      ? impStyle.sizes.horizontalBlockSize * 2
-                      : 0),
+                top: impStyle.sizes.horizontalBlockSize,
+              ),
               padding: EdgeInsets.symmetric(
                   horizontal: impStyle.sizes.horizontalBlockSize * 4.0,
                   vertical: impStyle.sizes.horizontalBlockSize * 2.0),
@@ -368,7 +410,21 @@ class _ChatState extends State<Chat> {
                 borderRadius: BorderRadius.circular(
                     impStyle.sizes.horizontalBlockSize * 4.0),
               ),
-              child: _highlightSearchText(data),
+              child: Column(
+                crossAxisAlignment: widget.self == data['user']
+                    ? CrossAxisAlignment.end
+                    : CrossAxisAlignment.start,
+                children: [
+                  _highlightSearchText(data),
+                  if (Extraction.users.length > 2 &&
+                      widget.self != data['user'])
+                    impStyle.impSubHeader(
+                      data['user']!,
+                      textColor: Colors.deepPurpleAccent,
+                      fontSize: impStyle.sizes.textMultiplier,
+                    ),
+                ],
+              ),
             ),
           ),
           if (tappedIndex.contains(widget.chatData.indexOf(data)))
@@ -395,6 +451,10 @@ class _ChatState extends State<Chat> {
                     ]),
               ),
             ),
+          if (widget.chatData.indexOf(data) == widget.chatData.length - 1)
+            SizedBox(
+              height: impStyle.sizes.horizontalBlockSize * 4.0,
+            ),
         ],
       ),
     );
@@ -403,7 +463,9 @@ class _ChatState extends State<Chat> {
   Widget _highlightSearchText(Map<String, String> data) {
     if (searchController.text.isEmpty) {
       return impStyle.impSubHeader(data['message']!,
-          textColor: widget.self == data['user'] ? ImpColors.pureWhiteColor : ImpColors.pureBlackColor);
+          textColor: widget.self == data['user']
+              ? ImpColors.pureWhiteColor
+              : ImpColors.pureBlackColor);
     }
 
     String lowerCaseMessage = data['message']!.toLowerCase();
@@ -412,22 +474,30 @@ class _ChatState extends State<Chat> {
     int start = 0;
     int indexOfHighlight;
 
-    while ((indexOfHighlight = lowerCaseMessage.indexOf(lowerCaseSearch, start)) != -1) {
+    while ((indexOfHighlight =
+            lowerCaseMessage.indexOf(lowerCaseSearch, start)) !=
+        -1) {
       if (indexOfHighlight > start) {
         // Add non-highlighted text
         spans.add(TextSpan(
             text: data['message']!.substring(start, indexOfHighlight),
             style: TextStyle(
-              color: widget.self == data['user'] ? ImpColors.pureWhiteColor : ImpColors.pureBlackColor,
+              color: widget.self == data['user']
+                  ? ImpColors.pureWhiteColor
+                  : ImpColors.pureBlackColor,
             )));
       }
 
       // Add highlighted text
       spans.add(TextSpan(
-          text: data['message']!.substring(indexOfHighlight, indexOfHighlight + lowerCaseSearch.length),
+          text: data['message']!.substring(
+              indexOfHighlight, indexOfHighlight + lowerCaseSearch.length),
           style: TextStyle(
-            backgroundColor: widget.self == data['user'] ? Colors.purple : Colors.yellow,
-            color: widget.self == data['user'] ? ImpColors.pureWhiteColor : ImpColors.pureBlackColor,
+            backgroundColor:
+                widget.self == data['user'] ? Colors.purple : Colors.yellow,
+            color: widget.self == data['user']
+                ? ImpColors.pureWhiteColor
+                : ImpColors.pureBlackColor,
           )));
 
       // Move the start index
@@ -439,7 +509,9 @@ class _ChatState extends State<Chat> {
       spans.add(TextSpan(
           text: data['message']!.substring(start),
           style: TextStyle(
-            color: widget.self == data['user'] ? ImpColors.pureWhiteColor : ImpColors.pureBlackColor,
+            color: widget.self == data['user']
+                ? ImpColors.pureWhiteColor
+                : ImpColors.pureBlackColor,
           )));
     }
 
@@ -468,14 +540,16 @@ class _ChatState extends State<Chat> {
       if (message.contains(lowerCaseQuery)) {
         searchResults.add(i);
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          scrollToIndex(searchResults.first);
-          setState(() {
-            searchedIndex = 0;
-          });
+          if (searchResults.isNotEmpty) {
+            scrollToIndex(searchResults.first);
+            setState(() {
+              searchedIndex = 0;
+            });
+          }
         });
       }
     }
-    if(searchResults.isEmpty) showToast('No results found');
+    if (searchResults.isEmpty) showToast('No results found');
   }
 
   void scrollToIndex(int index) {
@@ -513,5 +587,4 @@ class _ChatState extends State<Chat> {
         textColor: Colors.white,
         fontSize: impStyle.sizes.horizontalBlockSize * 2.5);
   }
-
 }

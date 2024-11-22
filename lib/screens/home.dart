@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:chat_formatter/config/colors.dart';
 import 'package:chat_formatter/config/customize_style.dart';
-import 'package:chat_formatter/config/debug_purpose.dart';
 import 'package:chat_formatter/config/images.dart';
 import 'package:chat_formatter/screens/chat.dart';
+import 'package:chat_formatter/screens/privacy.dart';
 import 'package:chat_formatter/services/extract_data.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -20,9 +20,7 @@ class _HomeState extends State<Home> {
   String? fileContent;
   File? file;
 
-
   bool isLoading = false;
-
 
   @override
   Widget build(BuildContext context) {
@@ -46,40 +44,72 @@ class _HomeState extends State<Home> {
                       // appBar
 
                       // body
-                      Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(
-                              impStyle.sizes.horizontalBlockSize * 4.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              impStyle.impImage(ImpImages.textFile,
-                                  heightInPercent: 20, widthInPercent: 50),
-                              impStyle.impSubHeader(
-                                  'Upload your imported whatsapp chat file.',
-                                  textColor: Colors.white12,
-                                  fontSize: impStyle.sizes.textMultiplier * 2.0,
-                                  textAlign: TextAlign.center),
-                              impStyle.impVerticalGap(
-                                  verticalGapSizeInPercent:
-                                      impStyle.sizes.horizontalBlockSize / 2),
-                              impStyle.impElevatedButton(
-                                  onPressed: () => _pickFile(context, impStyle),
-                                  childOfButton: impStyle.impHeader(
-                                    isLoading ? 'Uploading...' : 'Upload',
-                                  ),
-                                  widthInPercent: 50,
-                                  backgroundColor: isLoading
-                                      ? Colors.grey
-                                      : Colors.green.withOpacity(0.8),
-                                  borderColor: Colors.white24,
-                                  heightInPercent: 6),
-                            ],
+                      Expanded(
+                        child: Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(
+                                impStyle.sizes.horizontalBlockSize * 4.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                impStyle.impImage(ImpImages.textFile,
+                                    heightInPercent: 20, widthInPercent: 50),
+                                impStyle.impSubHeader(
+                                    "Please upload the unzipped WhatsApp chat file in `.txt` format.",
+                                    textColor: Colors.white30,
+                                    fontSize:
+                                        impStyle.sizes.textMultiplier * 2.0,
+                                    textAlign: TextAlign.center),
+                                impStyle.impVerticalGap(
+                                    verticalGapSizeInPercent:
+                                        impStyle.sizes.horizontalBlockSize / 2),
+                                impStyle.impElevatedButton(
+                                    onPressed: () =>
+                                        _pickFile(context, impStyle),
+                                    childOfButton: impStyle.impHeader(
+                                      isLoading ? 'Uploading...' : 'Upload',
+                                    ),
+                                    widthInPercent: 50,
+                                    backgroundColor: isLoading
+                                        ? Colors.grey
+                                        : Colors.green.withOpacity(0.8),
+                                    borderColor: Colors.white24,
+                                    heightInPercent: 6),
+                              ],
+                            ),
                           ),
                         ),
-                      )
-
+                      ),
                       // bottomBar
+                      impStyle.impShadedIconButton(
+                          onPressed: () {
+                            Navigator.push(
+                                context,
+                                PageRouteBuilder(pageBuilder:
+                                    (context, animation, secondaryAnimation) {
+                                  return Privacy();
+                                }, transitionsBuilder: (context, animation,
+                                    secondaryAnimation, child) {
+                                  return SlideTransition(
+                                    position: animation.drive(Tween(
+                                        begin: const Offset(0.0, 1.0),
+                                        end: Offset.zero)),
+                                    child: child,
+                                  );
+                                }));
+                          },
+                          icon: Icons.keyboard_double_arrow_up,
+                          backgroundColor: Colors.grey.shade900),
+                      impStyle.impVerticalGap(
+                          verticalGapSizeInPercent:
+                              impStyle.sizes.horizontalBlockSize / 2),
+                      impStyle.impSubHeader(
+                        'Created by @Rahul Prajapati',
+                        textColor: Colors.white12,
+                      ),
+                      impStyle.impVerticalGap(
+                          verticalGapSizeInPercent:
+                              impStyle.sizes.horizontalBlockSize / 2),
                     ],
                   )
                 ],
@@ -118,11 +148,15 @@ class _HomeState extends State<Home> {
           });
           List<Map<String, String>>? chatData =
               Extraction.extractData(fileContent: fileContent!);
-          if (chatData != null) {
+          // printGreen(chatData?.length);
+          // printYellow("Úsers: ${Extraction.users}");
+
+          if (chatData != null && chatData.isNotEmpty) {
+            // ignore: use_build_context_synchronously
             showAlertDialog(context, impStyle, chatData);
           }
         } else {
-          printRed("Error: File path is null.");
+          // printRed("Error: File path is null.");
         }
       } else {
         // User canceled the picker
@@ -130,11 +164,11 @@ class _HomeState extends State<Home> {
           isLoading = false;
           fileContent = null;
         });
-        printGreen(fileContent);
+        // printGreen(fileContent);
       }
     } catch (e) {
       setState(() => isLoading = false);
-      printRed("Error while picking file: $e");
+      // printRed("Error while picking file: $e");
     }
   }
 
@@ -142,8 +176,9 @@ class _HomeState extends State<Home> {
       List<Map<String, String>> chatData) {
     // Set up the buttons
     Widget cancelButton = TextButton(
-      child:
-          impStyle.impSubHeader("Cancel", textColor: ImpColors.pureBlackColor),
+      child: impStyle.impSubHeader("Cancel",
+          textColor: ImpColors.pureWhiteColor,
+          fontSize: impStyle.sizes.textMultiplier * 2.0),
       onPressed: () {
         Navigator.of(context).pop();
         fileContent = null;
@@ -154,11 +189,12 @@ class _HomeState extends State<Home> {
     // Set up the AlertDialog
     AlertDialog alert = AlertDialog(
       contentPadding: EdgeInsets.zero,
+      backgroundColor: Colors.grey.shade900,
       title: Padding(
         padding: EdgeInsets.only(bottom: impStyle.sizes.horizontalBlockSize),
         child: Center(
             child: impStyle.impHeader('User detected',
-                textColor: ImpColors.pureBlackColor)),
+                textColor: ImpColors.pureWhiteColor)),
       ),
       content: Padding(
         padding: EdgeInsets.symmetric(
@@ -166,8 +202,8 @@ class _HomeState extends State<Home> {
         child: Wrap(
           children: [
             impStyle.impSubHeader(
-                'These users are detected in your conversation. please choose which one is you.',
-                textColor: ImpColors.pureBlackColor,
+                "These users have been detected in your conversation. Please select the one that represents you.",
+                textColor: ImpColors.pureWhiteColor,
                 textAlign: TextAlign.left),
             impStyle.impVerticalGap(
                 verticalGapSizeInPercent: impStyle.sizes.horizontalBlockSize),
@@ -189,8 +225,8 @@ class _HomeState extends State<Home> {
                     },
                     childOfButton: impStyle.impHeader(user),
                     widthInPercent: 100,
-                    backgroundColor: Colors.deepPurpleAccent.withOpacity(0.7),
-                    borderColor: Colors.white,
+                    backgroundColor: Colors.deepPurpleAccent.withOpacity(0.3),
+                    borderColor: Colors.white38,
                     heightInPercent: 5),
               ),
           ],

@@ -1,15 +1,12 @@
-import 'package:chat_formatter/config/debug_purpose.dart';
-
 class Extraction {
   static Set<String> users = {};
   static Set<String> dates = {};
-
 
   static List<Map<String, String>>? extractData({required String fileContent}) {
     try {
       // Define the RegExp pattern for the valid message format
       RegExp regExp = RegExp(
-        r'(\d{1,2}/\d{1,2}/\d{4}), (\d{1,2}:\d{2}\s?[ap]m) - (.*?): (.*?)(?=\n\d{1,2}/\d{1,2}/\d{4}, \d{1,2}:\d{2}\s?[ap]m|$)',
+        r'(\d{1,2}/\d{1,2}/\d{2,4}), (\d{1,2}:\d{1,2}\s?[aApP][mM]) - (.*?): (.*?)(?=\n\d{1,2}/\d{1,2}/\d{4}, \d{1,2}:\d{2}\s?[ap]m|$)',
         dotAll: true,
       );
 
@@ -41,7 +38,7 @@ class Extraction {
 
       return extractedMessages;
     } catch (e) {
-      printRed('Error while Extracting the data: $e');
+      // printRed('Error while Extracting the data: $e');
     }
     return null;
   }

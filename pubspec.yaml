@@ -38,6 +38,7 @@ dependencies:
   file_picker: ^8.1.4
   fluttertoast: ^8.2.8
   scrollable_positioned_list: ^0.3.8
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:

@@ -50,156 +50,30 @@ class ImpCustomizeStyle {
     );
   }
 
-  Text impBody(String text,
-      {TextAlign? textAlign,
-      TextStyle? textStyle,
-      Color? textColor,
-      FontWeight? fontWeight,
-      int? maxLines}) {
-    return Text(
-      text,
-      maxLines: maxLines,
-      overflow: maxLines != null ? TextOverflow.ellipsis : null,
-      textAlign: textAlign ?? TextAlign.left,
-      style: textStyle ?? bodyStyle(color: textColor, fontWeight: fontWeight),
-    );
-  }
-
-  // LinearGradient impLinearGradient({List<Color>? colors}) {
-  //   return LinearGradient(
-  //     colors: colors ?? ImpColors.nameText,
-  //     begin: Alignment.topRight,
-  //     end: Alignment.bottomLeft,
-  //   );
-  // }
-
-  Text chatBubbleHeader(
-    String text, {
-    int? maxLinesOfText,
-    TextOverflow? onOverFlow,
-    TextAlign? textAlign,
-    TextStyle? textStyle,
-    bool isLevelTwo = false,
-  }) {
-    return Text(
-      text,
-      textAlign: textAlign ?? TextAlign.left,
-      style: textStyle ?? chatHeaderStyle(),
-    );
-  }
-
-  TextStyle chatHeaderStyle() {
+  TextStyle impPrivacyStyle({Color? color, FontWeight? fontWeight, double? size}) {
     return TextStyle(
-      fontSize: 2.5 * sizes.textMultiplier,
-      fontWeight: FontWeight.bold,
-      color: Colors.white,
-    );
-  }
-
-  Text chatBubbleSubHeader(
-    String text, {
-    int? maxLinesOfText,
-    TextOverflow? onOverFlow,
-    TextAlign? textAlign,
-    TextStyle? textStyle,
-    bool isLevelTwo = false,
-  }) {
-    return Text(
-      text,
-      textAlign: textAlign ?? TextAlign.left,
-      style: textStyle ?? chatSubHeaderStyle(),
-    );
-  }
-
-  TextStyle chatSubHeaderStyle() {
-    return TextStyle(
-      fontSize: 2.0 * sizes.textMultiplier,
-      color: Colors.white70,
-    );
-  }
-
-  Text chatBubbleBody(String text,
-      {TextAlign? textAlign,
-      TextStyle? textStyle,
-      Color? textColor,
-      double? textSize}) {
-    return Text(
-      text,
-      textAlign: textAlign,
-      style:
-          textStyle ?? chatBodyStyle(textColor: textColor, textSize: textSize),
-    );
-  }
-
-  TextStyle chatBodyStyle({Color? textColor, double? textSize}) {
-    return TextStyle(
-      fontSize: textSize ?? 1.7 * sizes.textMultiplier,
-      color: textColor ?? Colors.white,
-    );
-  }
-
-  Text pdfText(
-    String text, {
-    TextAlign? textAlign,
-    TextStyle? textStyle,
-  }) {
-    return Text(
-      text,
-      textAlign: textAlign ?? TextAlign.left,
-      overflow: TextOverflow.ellipsis,
-      maxLines: 1,
-      style: textStyle ?? pdfTextStyle(),
-    );
-  }
-
-  TextStyle pdfTextStyle(
-      {double? size,
-      Color? darkModeColor,
-      Color? lightModeColor,
-      FontWeight? fontWeight}) {
-    return TextStyle(
-      fontSize: size ?? 2.3 * sizes.textMultiplier,
-      fontWeight: fontWeight ?? FontWeight.bold,
-      color: ImpColors.pureBlackColor,
-    );
-  }
-
-  TextStyle impSloganStyle({Color? color}) {
-    return TextStyle(
-        fontSize: sizes.verticalBlockSize * 5.5,
+        fontSize: size,
         color: color ?? ImpColors.pureWhiteColor.withOpacity(0.9),
-        fontWeight: FontWeight.bold);
+        fontWeight: fontWeight);
   }
 
-  RichText impRichText(String text1, String text2, String text3,
+  RichText impRichText(String text1, String text2,
       {double? sizeOfText,
       TextAlign? textAlign,
       TextStyle? textStyle1,
       TextStyle? textStyle2,
-      TextStyle? textStyle3,
       Color? color1,
-      Color? color2,
-      Color? color3}) {
+      Color? color2}) {
     return RichText(
       textAlign: textAlign ?? TextAlign.left,
       text: TextSpan(
         children: [
           TextSpan(
-              text: text1, style: textStyle1 ?? impSloganStyle(color: color1)),
+              text: text1, style: textStyle1 ?? impPrivacyStyle(color: color1, fontWeight: FontWeight.bold, size: sizes.textMultiplier * 1.5)),
           TextSpan(
-              text: text2, style: textStyle2 ?? impSloganStyle(color: color2)),
-          TextSpan(
-              text: text3, style: textStyle3 ?? impSloganStyle(color: color3)),
+              text: text2, style: textStyle2 ?? impPrivacyStyle(color: color2, fontWeight: FontWeight.normal, size: sizes.textMultiplier * 1.5)),
         ],
       ),
-    );
-  }
-
-  LinearGradient impBgGradient() {
-    return LinearGradient(
-      colors: ImpColors.selfBubble,
-      begin: Alignment.topRight,
-      end: Alignment.bottomLeft,
     );
   }
 
@@ -227,38 +101,6 @@ class ImpCustomizeStyle {
       color: color ?? Colors.black,
     );
   }
-
-  TextStyle bodyStyle({Color? color, FontWeight? fontWeight, double? size}) {
-    return TextStyle(
-      fontSize: size ?? 2.0 * sizes.textMultiplier,
-      fontWeight: fontWeight ?? FontWeight.normal,
-      color: color ?? Colors.black,
-    );
-  }
-
-  TextStyle ultraMiniStyle({double? size, Color? color}) {
-    return TextStyle(
-      fontSize: size ?? 1.5 * sizes.textMultiplier,
-      fontWeight: FontWeight.normal,
-      color: color ?? Colors.black,
-    );
-  }
-
-  // // Image Styles
-  // LottieBuilder ImpLottieImage(String imagePath,
-  //     {double widthInPercent = 20, AnimationController? animationController}) {
-  //   return Lottie.asset(
-  //     imagePath,
-  //     width: sizes.horizontalBlockSize * widthInPercent,
-  //     fit: BoxFit.cover,
-  //     controller: animationController,
-  //     onLoaded: (composition) {
-  //       if (animationController != null) {
-  //         animationController.duration = composition.duration;
-  //       }
-  //     },
-  //   );
-  // }
 
   Image impImage(String imagePath,
       {double? widthInPercent,
@@ -390,21 +232,10 @@ class ImpCustomizeStyle {
         vertical: sizes.horizontalBlockSize * 1.5);
   }
 
-  TextStyle hintStyle() {
-    return bodyStyle(color: ImpColors.hintTextColor);
-  }
-
-  TextStyle labelStyle() {
-    return bodyStyle(color: ImpColors.labelTextColor);
-  }
-
   BorderRadius impTextFieldBorderRadius() {
     return BorderRadius.circular(sizes.textMultiplier * 2);
   }
 
-  // Date Time Container Styles
-
-  // Date Time text Styles
 
   // TextField Styles
   TextField impTextField({
@@ -472,10 +303,8 @@ class ImpCustomizeStyle {
                 ],
               )
             : null,
-        helperStyle: ultraMiniStyle(color: helperColor),
         alignLabelWithHint: true,
         labelText: labelText,
-        labelStyle: labelStyle(),
         hintText: hintText,
         hintStyle: TextStyle(
           color: hintTextColor ?? ImpColors.hintTextColor,
@@ -497,51 +326,6 @@ class ImpCustomizeStyle {
                   color: ImpColors.loginSignUpSuffixIconColor, width: 1)
               : BorderSide.none,
         ),
-      ),
-    );
-  }
-
-  Widget impLoginSignUpTextField({
-    bool needSuffixIcon = false,
-    required TextEditingController controller,
-    VoidCallback Function(String text)? onChangedText,
-    VoidCallback? onSuffixIconPressed,
-    String? hintText,
-    bool obscureText = false,
-    String? helperText,
-    Color? helperColor,
-    int? helperMaxLines,
-  }) {
-    return Container(
-      padding: EdgeInsets.only(
-        left: sizes.horizontalBlockSize * 4,
-        right: sizes.horizontalBlockSize * 4,
-        bottom: helperText == null ? 0 : sizes.verticalBlockSize * 1.5,
-      ),
-      decoration: BoxDecoration(
-        borderRadius: impTextFieldBorderRadius(),
-        border: Border.all(
-          color: ImpColors.greyColor,
-        ),
-        color: ImpColors.loginSignTextFieldContainerBgLight,
-      ),
-      child: impTextField(
-        controller: controller,
-        hintText: hintText,
-        obscureText: obscureText,
-        suffixIcon: needSuffixIcon
-            ? obscureText
-                ? Icons.visibility_off_outlined
-                : Icons.visibility_outlined
-            : null,
-        onSuffixIconPressed: onSuffixIconPressed,
-        multiLine: false,
-        contentPadding: false,
-        outerBorder: false,
-        focusOuterBorder: false,
-        helperText: helperText,
-        helperColor: helperColor,
-        helperMaxLines: helperMaxLines,
       ),
     );
   }
